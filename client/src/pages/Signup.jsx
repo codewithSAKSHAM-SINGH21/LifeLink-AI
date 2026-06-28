@@ -19,7 +19,16 @@ export default function Signup() {
       login(data);
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed");
+  console.log(err);
+  console.log(err.response);
+  console.log(err.response?.data);
+
+  setError(
+    err.response?.data?.message ||
+    err.message ||
+    "Signup failed"
+  );
+
     } finally {
       setLoading(false);
     }
