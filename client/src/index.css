@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(239, 68, 68, 0.14), transparent 30rem),
+      radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.12), transparent 28rem),
+      #f8fafc;
+  }
+
+  .dark body {
+    background:
+      radial-gradient(circle at top left, rgba(239, 68, 68, 0.16), transparent 28rem),
+      radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.12), transparent 30rem),
+      #050816;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen bg-transparent text-slate-950 dark:text-slate-50;
+  }
+
+  .page {
+    @apply min-h-[calc(100vh-72px)] px-4 py-8 sm:px-6 lg:px-8;
+  }
+
+  .page-inner {
+    @apply mx-auto w-full max-w-6xl;
+  }
+
+  .glass-panel {
+    @apply border border-white/70 bg-white/80 shadow-[0_24px_80px_rgba(15,23,42,0.10)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_24px_80px_rgba(0,0,0,0.28)];
+  }
+
+  .surface {
+    @apply rounded-lg border border-slate-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900;
+  }
+
+  .btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-dark {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-400/30 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200;
+  }
+
+  .btn-ghost {
+    @apply inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-white;
+  }
+
+  .field {
+    @apply mt-1 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-500/10 dark:border-white/10 dark:bg-slate-950/60 dark:text-white dark:focus:border-red-400;
+  }
+
+  .label {
+    @apply text-sm font-semibold text-slate-700 dark:text-slate-300;
+  }
+
+  .section-title {
+    @apply font-display text-2xl font-bold tracking-[-0.02em] text-slate-950 dark:text-white sm:text-3xl;
+  }
+
+  .muted {
+    @apply text-slate-600 dark:text-slate-400;
+  }
+
+  .nav-link {
+    @apply rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white;
+  }
+
+  .nav-link-active {
+    @apply bg-white/10 text-white;
+  }
+
+  .map-frame {
+    @apply overflow-hidden rounded-lg border border-slate-200 shadow-2xl shadow-slate-950/10 dark:border-white/10 dark:shadow-black/30;
+  }
+
+  .medical-grid {
+    background-image:
+      linear-gradient(rgba(15, 23, 42, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, 0.045) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+
+  .dark .medical-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  }
+
+  .pulse-ring {
+    position: relative;
+  }
+
+  .pulse-ring::before,
+  .pulse-ring::after {
+    position: absolute;
+    inset: -18px;
+    border: 1px solid rgba(220, 38, 38, 0.26);
+    border-radius: 9999px;
+    content: "";
+    animation: lifelink-pulse 2.4s ease-out infinite;
+  }
+
+  .pulse-ring::after {
+    animation-delay: 1.2s;
+  }
+}
+
+@keyframes lifelink-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
+}
