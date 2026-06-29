@@ -163,9 +163,50 @@ Create a `.env` file inside the `server` folder.
 ```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
+JWT_SECRET=replace_with_a_long_random_secret
 GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_API_VERSION=v1
+CLIENT_ORIGIN=http://localhost:5173
 ```
+
+Create a `.env` file inside the `client` folder for local development.
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+---
+
+## Deployment
+
+Deploy the backend first, then use its live HTTPS URL when building the frontend.
+
+### Backend
+
+1. Deploy the `server/` directory to Render, Railway, Fly.io, or another Node host.
+2. Use `npm start` as the start command.
+3. Set these backend environment variables in the hosting dashboard:
+   - `MONGO_URI`
+   - `JWT_SECRET`
+   - `GEMINI_API_KEY`
+   - `CLIENT_ORIGIN` with your deployed frontend origin, for example `https://your-app.vercel.app`
+4. In MongoDB Atlas, allow your deployed backend to connect under **Network Access**. For dynamic cloud hosts, use `0.0.0.0/0` only if that matches your security requirements.
+
+### Frontend
+
+Set `VITE_API_URL` before building the Vite app:
+
+```env
+VITE_API_URL=https://your-backend-url.onrender.com/api
+```
+
+Important deployment notes:
+
+- The value must include `/api`.
+- Use `https://` when the frontend is served over HTTPS.
+- Vite injects `VITE_*` variables at build time, so redeploy/rebuild the frontend after changing `VITE_API_URL`.
+- Production builds fail fast if `VITE_API_URL` is missing to avoid shipping a bundle that calls `localhost`.
 
 ---
 
