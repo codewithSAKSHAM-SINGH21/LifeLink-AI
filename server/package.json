@@ -9,7 +9,7 @@
     "build": "node --check index.js && node --check routes/authRoutes.js && node --check routes/sosRoutes.js && node --check routes/aiRoutes.js && node --check routes/placesRoutes.js && node --check models/User.js && node --check models/SOS.js && node --check middleware/authMiddleware.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "@google/genai": "^2.32.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
