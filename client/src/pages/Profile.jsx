@@ -69,46 +69,47 @@ export default function Profile() {
 
   return (
     <div className="page">
-      <div className="page-inner grid gap-5 lg:grid-cols-[0.72fr_1.28fr]">
-        <aside className="glass-panel rounded-lg p-6 text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-lg bg-slate-950 font-mono text-lg font-bold tracking-[0.08em] text-white dark:bg-white dark:text-slate-950">
+      <div className="page-inner profile-layout">
+        <aside className="glass-panel profile-summary">
+          <div className="profile-symbol">
             QR
           </div>
-          <h1 className="mt-5 font-display text-2xl font-bold tracking-[-0.02em] text-slate-950 dark:text-white">
+          <h1 className="section-title">
             Emergency profile
           </h1>
-          <p className="muted mt-2 text-sm">Keep key medical details accessible in an emergency.</p>
+          <p className="profile-summary-copy">Keep key medical details accessible in an emergency.</p>
 
-          <div className="mt-7 inline-block rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 dark:border-white/10">
-            <QRCodeSVG value={qrData} size={220} level="Q" includeMargin aria-label="Emergency profile QR code" />
+          <div className="profile-qr">
+              <QRCodeSVG value={qrData} size={220} level="Q" includeMargin role="img" aria-label="Emergency profile QR code" />
           </div>
-          <p className="muted mx-auto mt-3 max-w-xs text-xs">This code contains the details shown below. Anyone who scans it can read them.</p>
+          <p className="profile-privacy">This code contains the details shown below. Anyone who scans it can read them.</p>
 
-          <div className="mt-6 rounded-lg bg-slate-950 p-4 text-left text-sm text-white dark:bg-white dark:text-slate-950">
-            <p className="font-display font-bold">{user?.name || "LifeLink user"}</p>
-            <p className="mt-1 opacity-75">Blood group: {form.bloodGroup || "Not set"}</p>
+          <div className="profile-identity">
+            <strong>{user?.name || "LifeLink user"}</strong>
+            <p>Blood group: {form.bloodGroup || "Not set"}</p>
           </div>
         </aside>
 
-        <section className="glass-panel rounded-lg p-6 sm:p-8">
-          <div className="mb-7 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <section className="glass-panel profile-editor">
+          <div className="profile-editor-head">
             <div>
               <h2 className="section-title">Medical details</h2>
-              <p className="muted mt-2">Keep these details accurate and easy to scan.</p>
+              <p>Keep these details accurate and up to date.</p>
             </div>
             {saved && (
-              <span className="rounded-lg bg-emerald-50 px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.14em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200">
+              <span className="status-pill">
                 Saved
               </span>
             )}
           </div>
 
-          {error && <p role="alert" className="mb-5 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{error}</p>}
+          {error && <p role="alert" className="error-banner mb-5">{error}</p>}
 
-          <form onSubmit={handleSave} className="grid gap-5 sm:grid-cols-2">
+          <form onSubmit={handleSave} className="profile-form">
             <div>
-              <label className="label">Blood group</label>
+              <label className="label" htmlFor="profile-blood-group">Blood group</label>
               <input
+                id="profile-blood-group"
                 value={form.bloodGroup}
                 onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}
                 placeholder="e.g. O+"
@@ -116,32 +117,36 @@ export default function Profile() {
               />
             </div>
             <div>
-              <label className="label">Emergency contact phone</label>
+              <label className="label" htmlFor="profile-contact-phone">Emergency contact phone</label>
               <input
+                id="profile-contact-phone"
+                type="tel"
                 value={form.emergencyContactPhone}
                 onChange={(e) => setForm({ ...form, emergencyContactPhone: e.target.value })}
                 className="field"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="label">Allergies / conditions</label>
+            <div className="form-span">
+              <label className="label" htmlFor="profile-allergies">Allergies / conditions</label>
               <input
+                id="profile-allergies"
                 value={form.allergies}
                 onChange={(e) => setForm({ ...form, allergies: e.target.value })}
                 placeholder="e.g. Penicillin allergy, asthma"
                 className="field"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="label">Emergency contact name</label>
+            <div className="form-span">
+              <label className="label" htmlFor="profile-contact-name">Emergency contact name</label>
               <input
+                id="profile-contact-name"
                 value={form.emergencyContactName}
                 onChange={(e) => setForm({ ...form, emergencyContactName: e.target.value })}
                 className="field"
               />
             </div>
 
-            <button type="submit" disabled={saving} className="btn-primary sm:col-span-2">
+            <button type="submit" disabled={saving} className="btn-primary form-span">
               {saving ? "Saving…" : "Save profile"}
             </button>
           </form>
