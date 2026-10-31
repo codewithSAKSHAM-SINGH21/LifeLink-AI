@@ -57,7 +57,7 @@ npm run dev
 
 The API waits for MongoDB before accepting requests. Check readiness at `http://localhost:5000/api/health`.
 
-Nearby service searches use `GET /api/places/nearby` on the backend. The API queries OpenStreetMap's Overpass service, retries through alternate providers when needed, and expands the search radius up to 40 km.
+Nearby service searches use `GET /api/places/nearby` on the backend. The API queries OpenStreetMap's Overpass service, retries through alternate providers, then falls back to Nominatim when Overpass is unavailable. Nominatim results are cached for ten minutes and requests are serialized to stay within its one-request-per-second usage limit. Search results are limited to 40 km.
 
 ### Frontend
 
