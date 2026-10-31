@@ -1,48 +1,6 @@
 import { useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-
-// Multiple Overpass mirrors - if one is down/rate-limited, try the next
-const OVERPASS_ENDPOINTS = [
-  "https://overpass-api.de/api/interpreter",
-  "https://overpass.kumi.systems/api/interpreter",
-  "https://overpass.openstreetmap.ru/api/interpreter",
-];
-
-// Progressive radius widening if nothing is found nearby (in meters)
-const RADIUS_STEPS = [5000, 15000, 40000];
-
-async function queryOverpass(amenity, latitude, longitude, radius) {
-  const query = `
-    [out:json][timeout:20];
-    nwr["amenity"="${amenity}"](around:${radius},${latitude},${longitude});
-    out center;
-  `;
-
-  let lastError = null;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=UTF-8" },
-        body: query,
-        signal: AbortSignal.timeout(25000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const seen = new Set();
-      return (data.elements || []).filter((place) => {
-        const key = `${place.type || "node"}/${place.id}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    } catch (err) {
-      lastError = err;
-      // try next mirror
-    }
-  }
-  throw lastError || new Error("All Overpass mirrors failed");
-}
+import api from "../api/axios";
 
 export default function NearbyHelp() {
   const [places, setPlaces] = useState([]);
@@ -73,26 +31,17 @@ export default function NearbyHelp() {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         setCenter([latitude, longitude]);
-        const amenity = filter === "hospital" ? "hospital" : "police";
-
         try {
-          let found = [];
-          for (const radius of RADIUS_STEPS) {
-            setLoadingNote(
-              radius === 5000
-                ? "Searching nearby..."
-                : `Expanding search to ${radius / 1000}km...`
-            );
-            found = await queryOverpass(amenity, latitude, longitude, radius);
-            setSearchedRadiusKm(radius / 1000);
-            if (found.length > 0) break;
-          }
-          setPlaces(found);
+          setLoadingNote("Searching nearby services...");
+          const { data } = await api.get("/places/nearby", {
+            params: { category: filter, latitude, longitude },
+            timeout: 60000,
+          });
+          setPlaces(data.places || []);
+          setSearchedRadiusKm(data.radiusKm || 40);
           setSearched(true);
         } catch (err) {
-          setError(
-            "Could not reach the map data service right now. Please check your connection and try again."
-          );
+          setError(err.response?.data?.message || "Nearby search failed. Check your connection and try again.");
         } finally {
           setLoading(false);
           setLoadingNote("");
@@ -128,6 +77,7 @@ export default function NearbyHelp() {
                   setPlaces([]);
                   setSearchedRadiusKm(null);
                   setSearched(false);
+                  setError("");
                 }}
                 aria-pressed={filter === value}
                 className={filter === value ? "btn-primary" : "btn-ghost"}
