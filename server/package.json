@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node --watch index.js",
     "start": "node index.js",
-    "build": "node --check index.js && node --check routes/authRoutes.js && node --check routes/sosRoutes.js && node --check routes/aiRoutes.js && node --check models/User.js && node --check models/SOS.js && node --check middleware/authMiddleware.js"
+    "test": "node --test",
+    "build": "node --check index.js && node --check routes/authRoutes.js && node --check routes/sosRoutes.js && node --check routes/aiRoutes.js && node --check routes/placesRoutes.js && node --check models/User.js && node --check models/SOS.js && node --check middleware/authMiddleware.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

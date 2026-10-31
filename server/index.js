@@ -8,6 +8,7 @@ import helmet from "helmet";
 import authRoutes from "./routes/authRoutes.js";
 import sosRoutes from "./routes/sosRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import placesRoutes from "./routes/placesRoutes.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -52,6 +53,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/sos", sosRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/places", placesRoutes);
 
 app.use((_req, res) => res.status(404).json({ message: "Endpoint not found" }));
 app.use((err, _req, res, _next) => {
