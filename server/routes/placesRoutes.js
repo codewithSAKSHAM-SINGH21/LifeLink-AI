@@ -11,6 +11,8 @@ const categories = {
   police: '["amenity"="police"]',
 };
 const radii = [5000, 15000, 40000];
+const overpassTimeoutSeconds = 15;
+const requestTimeoutMs = 25000;
 const lookupLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 20,
@@ -40,7 +42,7 @@ export async function handleNearby(req, res) {
     const areaQuery = category === "hospital"
       ? `nwr["healthcare"~"^(hospital|clinic|doctor)$"](around:${radius},${latitude},${longitude});`
       : "";
-    const query = `[out:json][timeout:15];nwr${categories[category]}(around:${radius},${latitude},${longitude});${areaQuery}out center;`;
+    const query = `[out:json][timeout:${overpassTimeoutSeconds}];nwr${categories[category]}(around:${radius},${latitude},${longitude});${areaQuery}out center;`;
     let responseReceived = false;
     for (const endpoint of endpoints) {
       try {
@@ -51,7 +53,9 @@ export async function handleNearby(req, res) {
             "User-Agent": "LifeLink/1.0 (nearby service lookup)",
           },
           body: new URLSearchParams({ data: query }),
-          signal: AbortSignal.timeout(10000),
+          // Leave transport headroom beyond the Overpass query timeout so a
+          // valid query is not cancelled just before the provider responds.
+          signal: AbortSignal.timeout(requestTimeoutMs),
         });
         if (!response.ok) throw new Error(`Map data service returned ${response.status}`);
         const data = await response.json();
