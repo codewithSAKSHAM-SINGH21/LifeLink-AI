@@ -23,13 +23,11 @@ export default function Navbar() {
     `nav-link ${location.pathname === path ? "nav-link-active" : ""}`;
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/94 px-4 py-3 text-white shadow-2xl shadow-slate-950/20 backdrop-blur-xl sm:px-6">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-        <Link to="/" className="flex items-center gap-3 font-display font-bold tracking-[-0.02em]">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-red-600 text-lg shadow-lg shadow-red-600/30">
-            +
-          </span>
-          <span className="text-lg">LifeLink AI</span>
+    <nav className="sticky top-0 z-50 border-b border-[#e1e5e0] bg-[#f7f8f5]/95 px-5 py-3 backdrop-blur sm:px-8">
+      <div className="mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-3">
+        <Link to="/" className="flex items-center gap-3 font-bold tracking-[-0.02em] text-[#203c2f] no-underline">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-[#244637] text-xl text-white">+</span>
+          <span className="text-lg">LifeLink</span>
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
@@ -39,10 +37,10 @@ export default function Navbar() {
                 SOS
               </Link>
               <Link to="/help" className={linkClass("/help")}>
-                Hospitals & Police
+                Nearby help
               </Link>
               <Link to="/assistant" className={linkClass("/assistant")}>
-                AI Assistant
+                First aid
               </Link>
               <Link to="/profile" className={linkClass("/profile")}>
                 Profile
@@ -52,17 +50,17 @@ export default function Navbar() {
 
           <button
             onClick={() => setDark(!dark)}
-            className="grid h-10 w-10 place-items-center rounded-lg bg-white/10 font-mono text-xs font-bold text-white transition hover:bg-white/15"
+            className="grid h-9 w-9 place-items-center rounded-full border border-[#d9dfd9] bg-white text-xs font-bold text-[#345543] transition hover:bg-[#eef1eb]"
             aria-label="Toggle dark mode"
             title="Toggle theme"
           >
-            {dark ? "L" : "D"}
+            {dark ? "☼" : "◐"}
           </button>
 
           {user ? (
             <button
               onClick={handleLogout}
-              className="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/15"
+              className="rounded border border-[#d9dfd9] px-4 py-2 text-sm font-semibold text-[#345543] transition hover:bg-[#eef1eb]"
             >
               Log out
             </button>

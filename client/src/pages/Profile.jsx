@@ -68,7 +68,7 @@ export default function Profile() {
           <h1 className="mt-5 font-display text-2xl font-bold tracking-[-0.02em] text-slate-950 dark:text-white">
             Emergency profile
           </h1>
-          <p className="muted mt-2 text-sm">Responder-ready medical details for fast scanning.</p>
+          <p className="muted mt-2 text-sm">Keep key medical details accessible in an emergency.</p>
 
           <div className="mt-7 inline-block rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 dark:border-white/10">
             <img src={qrUrl} alt="Emergency QR code" className="h-56 w-56 rounded-lg" />

@@ -38,13 +38,10 @@ export default function Signup() {
     <div className="page flex items-center justify-center">
       <div className="glass-panel w-full max-w-2xl rounded-lg p-6 sm:p-8 lg:p-10">
         <div className="mb-8">
-          <div className="mb-4 inline-flex rounded-lg bg-red-50 px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.14em] text-red-700 dark:bg-red-500/10 dark:text-red-200">
-            New responder profile
-          </div>
           <h1 className="font-display text-3xl font-bold tracking-[-0.02em] text-slate-950 dark:text-white">
             Create your account
           </h1>
-          <p className="muted mt-2">Set up the details that help LifeLink help you faster.</p>
+          <p className="muted mt-2">Create an account to access emergency tools and save your medical details.</p>
         </div>
 
         {error && (
