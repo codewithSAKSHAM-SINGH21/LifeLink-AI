@@ -16,6 +16,7 @@ const overpassTimeoutSeconds = 10;
 const requestTimeoutMs = 12000;
 const nominatimCacheTtlMs = 10 * 60 * 1000;
 const nominatimRequestTimeoutMs = 3000;
+const nominatimBaseUrl = process.env.NOMINATIM_BASE_URL?.trim() || "https://nominatim.openstreetmap.org";
 const nominatimCache = new Map();
 let nominatimQueue = Promise.resolve();
 let lastNominatimRequestAt = 0;
@@ -54,10 +55,12 @@ async function searchNominatim(category, latitude, longitude) {
     bounded: "1",
   });
   const request = async () => {
+    const queuedCache = nominatimCache.get(cacheKey);
+    if (queuedCache && queuedCache.expiresAt > Date.now()) return queuedCache.places;
     const waitMs = Math.max(0, 1000 - (Date.now() - lastNominatimRequestAt));
     if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs));
     lastNominatimRequestAt = Date.now();
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+    const response = await fetch(`${nominatimBaseUrl.replace(/\/$/, "")}/search?${params}`, {
       headers: {
         "User-Agent": "LifeLink/1.0 (+https://github.com/codewithSAKSHAM-SINGH21/LifeLink-AI; nearby-service-search)",
         "Accept-Language": "en",
