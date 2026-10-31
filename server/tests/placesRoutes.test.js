@@ -41,6 +41,29 @@ test("widens an empty search and returns mapped hospital and healthcare results"
   assert.match(queries[1], /around:15000/);
 });
 
+test("allows the map provider longer than the Overpass query timeout", async () => {
+  const timeoutValues = [];
+  const originalTimeout = AbortSignal.timeout;
+  AbortSignal.timeout = (milliseconds) => {
+    timeoutValues.push(milliseconds);
+    return originalTimeout.call(AbortSignal, milliseconds);
+  };
+  globalThis.fetch = async (_url, options) => {
+    const query = new URLSearchParams(options.body).get("data");
+    assert.match(query, /\[timeout:15\]/);
+    assert.ok(timeoutValues.at(-1) > 15000);
+    return Response.json({ elements: [{ type: "node", id: 9, lat: 10, lon: 20, tags: { name: "City Hospital" } }] });
+  };
+  try {
+    const result = response();
+    await handleNearby(request({ category: "hospital", latitude: "10", longitude: "20" }), result);
+    assert.equal(result.statusCode, 200);
+    assert.equal(timeoutValues[0], 25000);
+  } finally {
+    AbortSignal.timeout = originalTimeout;
+  }
+});
+
 test("fails over to another map provider and reports outages clearly", async () => {
   let calls = 0;
   globalThis.fetch = async () => {
