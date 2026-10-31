@@ -19,16 +19,7 @@ export default function Signup() {
       login(data);
       navigate("/");
     } catch (err) {
-  console.log(err);
-  console.log(err.response);
-  console.log(err.response?.data);
-
-  setError(
-    err.response?.data?.message ||
-    err.message ||
-    "Signup failed"
-  );
-
+      setError(err.response?.data?.message || "We could not create your account. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -54,6 +45,7 @@ export default function Signup() {
           <div className="sm:col-span-2">
             <label className="label">Full name</label>
             <input
+              autoComplete="name"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -64,6 +56,7 @@ export default function Signup() {
             <label className="label">Email</label>
             <input
               type="email"
+              autoComplete="email"
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -73,6 +66,8 @@ export default function Signup() {
           <div>
             <label className="label">Phone</label>
             <input
+              type="tel"
+              autoComplete="tel"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               className="field"
@@ -82,6 +77,9 @@ export default function Signup() {
             <label className="label">Password</label>
             <input
               type="password"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
               required
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}

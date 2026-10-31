@@ -28,8 +28,8 @@ function FormattedMessage({ text }) {
 export default function Assistant() {
   const [messages, setMessages] = useState([
     {
-      role: "ai",
-      text: "Hi, I am your LifeLink first-aid assistant. Describe the emergency and I will guide you step by step. For anything life-threatening, call emergency services immediately.",
+      role: "assistant",
+      text: "Describe what is happening for general first-aid steps. For anything life-threatening, call your local emergency number now.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -41,7 +41,7 @@ export default function Assistant() {
   }, [messages]);
 
   const sendMessage = async (text) => {
-    if (!text.trim()) return;
+    if (!text.trim() || loading) return;
     const userMsg = { role: "user", text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
@@ -49,13 +49,13 @@ export default function Assistant() {
 
     try {
       const { data } = await api.post("/ai/chat", { message: text });
-      setMessages((prev) => [...prev, { role: "ai", text: data.reply }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: data.reply }]);
     } catch (err) {
       const errorMessage =
         err?.response?.data?.message ||
-        "Sorry, I could not reach the AI service right now. If this is a real emergency, please call your local emergency number immediately.";
+        "Guidance is unavailable right now. If this is an emergency, call your local emergency number immediately.";
 
-      setMessages((prev) => [...prev, { role: "ai", text: errorMessage }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: errorMessage }]);
     } finally {
       setLoading(false);
     }
@@ -78,6 +78,7 @@ export default function Assistant() {
               <button
                 key={prompt}
                 onClick={() => sendMessage(prompt)}
+                disabled={loading}
                 className="btn-ghost w-full justify-start"
               >
                 {prompt}
@@ -94,11 +95,9 @@ export default function Assistant() {
           <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-4 dark:border-white/10">
             <div>
               <h2 className="font-display font-bold text-slate-950 dark:text-white">Guidance chat</h2>
-              <p className="muted text-sm">Clear steps, readable format, fast replies.</p>
+              <p className="muted text-sm">General guidance while you arrange professional care.</p>
             </div>
-            <span className="rounded-lg bg-emerald-50 px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.14em] text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200">
-              Online
-            </span>
+            <span className="rounded-lg bg-amber-50 px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.14em] text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">Not emergency care</span>
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto pr-1">
@@ -136,10 +135,13 @@ export default function Assistant() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Describe the emergency..."
+              disabled={loading}
+              maxLength={2000}
+              aria-label="Describe what is happening"
               className="field mt-0"
             />
             <button type="submit" disabled={loading} className="btn-primary shrink-0">
-              Send
+              {loading ? "Sending…" : "Send"}
             </button>
           </form>
         </section>

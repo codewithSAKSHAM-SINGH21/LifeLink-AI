@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const tools = [
-  { number: "01", title: "Emergency alert", description: "Send your location with a single SOS request.", href: "/sos", action: "Open SOS" },
+  { number: "01", title: "Emergency SOS", description: "Save your location with an SOS entry in your account.", href: "/sos", action: "Open SOS" },
   { number: "02", title: "Nearby services", description: "Find hospitals and police stations on a live map.", href: "/help", action: "View map" },
   { number: "03", title: "First aid guidance", description: "Get practical steps while help is on its way.", href: "/assistant", action: "Get guidance" },
   { number: "04", title: "Medical profile", description: "Keep essential details and an emergency QR code close.", href: "/profile", action: "Manage profile" },
@@ -17,7 +17,7 @@ export default function Home() {
           <div className="hero-copy">
             <p className="eyebrow"><span className="eyebrow-mark" /> Emergency support, within reach</p>
             <h1>When it matters,<br /><em>be ready.</em></h1>
-            <p className="hero-lede">LifeLink brings emergency alerts, nearby services and essential medical information together in one place.</p>
+            <p className="hero-lede">LifeLink keeps nearby services, first-aid guidance and essential medical information together in one place.</p>
             <div className="hero-actions">
               <Link to={user ? "/sos" : "/signup"} className="btn-primary">{user ? "Open emergency tools" : "Get started"}<span aria-hidden="true">↗</span></Link>
               <Link to={user ? "/help" : "/login"} className="text-link">{user ? "Find nearby help" : "Sign in to your account"}<span aria-hidden="true">→</span></Link>

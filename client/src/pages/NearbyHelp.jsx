@@ -14,17 +14,28 @@ const RADIUS_STEPS = [5000, 15000, 40000];
 async function queryOverpass(amenity, latitude, longitude, radius) {
   const query = `
     [out:json][timeout:20];
-    node["amenity"="${amenity}"](around:${radius},${latitude},${longitude});
-    out body;
+    nwr["amenity"="${amenity}"](around:${radius},${latitude},${longitude});
+    out center;
   `;
 
   let lastError = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
-      const res = await fetch(endpoint, { method: "POST", body: query });
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: query,
+        signal: AbortSignal.timeout(25000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      return data.elements || [];
+      const seen = new Set();
+      return (data.elements || []).filter((place) => {
+        const key = `${place.type || "node"}/${place.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     } catch (err) {
       lastError = err;
       // try next mirror
@@ -41,13 +52,22 @@ export default function NearbyHelp() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("hospital");
   const [searchedRadiusKm, setSearchedRadiusKm] = useState(null);
+  const [searched, setSearched] = useState(false);
 
   const findNearby = () => {
     setLoading(true);
     setError("");
     setPlaces([]);
     setSearchedRadiusKm(null);
+    setSearched(false);
     setLoadingNote("Getting your location...");
+
+    if (!navigator.geolocation) {
+      setError("Location access is not available in this browser.");
+      setLoading(false);
+      setLoadingNote("");
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -68,6 +88,7 @@ export default function NearbyHelp() {
             if (found.length > 0) break;
           }
           setPlaces(found);
+          setSearched(true);
         } catch (err) {
           setError(
             "Could not reach the map data service right now. Please check your connection and try again."
@@ -81,7 +102,8 @@ export default function NearbyHelp() {
         setError("Location access is needed to find nearby help.");
         setLoading(false);
         setLoadingNote("");
-      }
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   };
 
@@ -101,7 +123,12 @@ export default function NearbyHelp() {
             ].map(([value, label]) => (
               <button
                 key={value}
-                onClick={() => setFilter(value)}
+                onClick={() => {
+                  setFilter(value);
+                  setPlaces([]);
+                  setSearchedRadiusKm(null);
+                  setSearched(false);
+                }}
                 className={filter === value ? "btn-primary" : "btn-ghost"}
               >
                 {label}
@@ -131,11 +158,14 @@ export default function NearbyHelp() {
                 <Marker position={center}>
                   <Popup>You are here</Popup>
                 </Marker>
-                {places.map((p) => (
-                  <Marker key={p.id} position={[p.lat, p.lon]}>
+                {places.map((p) => {
+                  const latitude = p.lat ?? p.center?.lat;
+                  const longitude = p.lon ?? p.center?.lon;
+                  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+                  return <Marker key={`${p.type || "node"}/${p.id}`} position={[latitude, longitude]}>
                     <Popup>{p.tags?.name || (filter === "hospital" ? "Hospital" : "Police station")}</Popup>
-                  </Marker>
-                ))}
+                  </Marker>;
+                })}
               </MapContainer>
             ) : (
               <div className="grid h-full place-items-center p-8 text-center">
@@ -161,19 +191,24 @@ export default function NearbyHelp() {
                   Found within ~{searchedRadiusKm} km
                 </p>
                 <ul className="space-y-3">
-                  {places.map((p) => (
-                    <li key={p.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+                  {places.map((p) => {
+                    const latitude = p.lat ?? p.center?.lat;
+                    const longitude = p.lon ?? p.center?.lon;
+                    return <li key={`${p.type || "node"}/${p.id}`} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
                       <p className="font-display font-bold text-slate-950 dark:text-white">
                         {p.tags?.name || (filter === "hospital" ? "Unnamed hospital" : "Unnamed police station")}
                       </p>
                       <p className="muted mt-1 text-sm">
                         {p.tags?.["addr:street"] || "Address not listed"}
                       </p>
-                    </li>
-                  ))}
+                      {Number.isFinite(latitude) && Number.isFinite(longitude) && (
+                        <a className="mt-3 inline-flex text-sm font-semibold text-emerald-800 underline dark:text-emerald-300" href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`} target="_blank" rel="noreferrer">Directions</a>
+                      )}
+                    </li>;
+                  })}
                 </ul>
               </>
-            ) : !loading && !error && center ? (
+            ) : searched && !loading && !error && center ? (
               <div className="muted text-sm">
                 <p className="mb-2">
                   No {filter === "hospital" ? "hospitals" : "police stations"} found
@@ -188,7 +223,7 @@ export default function NearbyHelp() {
                 </p>
               </div>
             ) : (
-              <p className="muted text-sm">Results will appear here.</p>
+              <p className="muted text-sm">{center ? "Search this category to update the results." : "Search near you to see nearby services."}</p>
             )}
           </aside>
         </div>

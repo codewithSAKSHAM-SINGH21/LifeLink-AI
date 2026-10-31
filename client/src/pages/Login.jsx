@@ -60,8 +60,9 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="mt-7 space-y-5">
             <div>
               <label className="label">Email</label>
-              <input
+            <input
                 type="email"
+              autoComplete="email"
                 required
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -70,8 +71,9 @@ export default function Login() {
             </div>
             <div>
               <label className="label">Password</label>
-              <input
+            <input
                 type="password"
+              autoComplete="current-password"
                 required
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}

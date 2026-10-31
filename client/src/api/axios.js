@@ -29,4 +29,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && localStorage.getItem("lifelink_user")) {
+      localStorage.removeItem("lifelink_user");
+      window.dispatchEvent(new Event("lifelink:unauthorized"));
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

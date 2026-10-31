@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -12,6 +13,8 @@ export default function Profile() {
   });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -24,7 +27,7 @@ export default function Profile() {
           emergencyContactPhone: data.emergencyContactPhone || "",
         });
       } catch (err) {
-        // Leave fields blank if profile data cannot be loaded.
+        setError(err.response?.data?.message || "We could not load your medical details. Please refresh and try again.");
       } finally {
         setLoading(false);
       }
@@ -35,18 +38,24 @@ export default function Profile() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaved(false);
+    setError("");
+    setSaving(true);
     try {
       await api.put("/auth/profile", form);
       setSaved(true);
     } catch (err) {
-      // Keep the form intact for the user.
+      setError(err.response?.data?.message || "We could not save your details. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const qrData = encodeURIComponent(
-    `Name: ${user?.name}\nBlood Group: ${form.bloodGroup}\nAllergies: ${form.allergies}\nEmergency Contact: ${form.emergencyContactName} (${form.emergencyContactPhone})`
-  );
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${qrData}`;
+  const qrData = [
+    `Name: ${user?.name || ""}`,
+    `Blood group: ${form.bloodGroup || "Not set"}`,
+    `Allergies or conditions: ${form.allergies || "Not set"}`,
+    `Emergency contact: ${form.emergencyContactName || "Not set"} (${form.emergencyContactPhone || "Not set"})`,
+  ].join("\n");
 
   if (loading) {
     return (
@@ -71,8 +80,9 @@ export default function Profile() {
           <p className="muted mt-2 text-sm">Keep key medical details accessible in an emergency.</p>
 
           <div className="mt-7 inline-block rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 dark:border-white/10">
-            <img src={qrUrl} alt="Emergency QR code" className="h-56 w-56 rounded-lg" />
+            <QRCodeSVG value={qrData} size={220} level="Q" includeMargin aria-label="Emergency profile QR code" />
           </div>
+          <p className="muted mx-auto mt-3 max-w-xs text-xs">This code contains the details shown below. Anyone who scans it can read them.</p>
 
           <div className="mt-6 rounded-lg bg-slate-950 p-4 text-left text-sm text-white dark:bg-white dark:text-slate-950">
             <p className="font-display font-bold">{user?.name || "LifeLink user"}</p>
@@ -92,6 +102,8 @@ export default function Profile() {
               </span>
             )}
           </div>
+
+          {error && <p role="alert" className="mb-5 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{error}</p>}
 
           <form onSubmit={handleSave} className="grid gap-5 sm:grid-cols-2">
             <div>
@@ -129,8 +141,8 @@ export default function Profile() {
               />
             </div>
 
-            <button type="submit" className="btn-primary sm:col-span-2">
-              Save profile
+            <button type="submit" disabled={saving} className="btn-primary sm:col-span-2">
+              {saving ? "Saving…" : "Save profile"}
             </button>
           </form>
         </section>

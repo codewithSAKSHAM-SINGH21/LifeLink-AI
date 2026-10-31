@@ -3,20 +3,22 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --signal SIGTERM --watch index.js --watch routes --watch models --watch middleware --ext js,mjs,json index.js",
+    "dev": "node --watch index.js",
     "start": "node index.js",
-    "build": "node --check index.js"
+    "build": "node --check index.js && node --check routes/authRoutes.js && node --check routes/sosRoutes.js && node --check routes/aiRoutes.js && node --check models/User.js && node --check models/SOS.js && node --check middleware/authMiddleware.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "mongoose": "^8.5.0",
+    "@google/generative-ai": "^0.21.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.7.2",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "@google/generative-ai": "^0.21.0"
+    "mongoose": "^8.5.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.4"
+  "overrides": {
+    "qs": "^6.16.2"
   }
 }
