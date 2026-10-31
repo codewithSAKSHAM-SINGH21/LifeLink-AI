@@ -10,8 +10,8 @@ export default function Signup() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
     setLoading(true);
     try {
@@ -19,88 +19,50 @@ export default function Signup() {
       login(data);
       navigate("/");
     } catch (err) {
-  console.log(err);
-  console.log(err.response);
-  console.log(err.response?.data);
-
-  setError(
-    err.response?.data?.message ||
-    err.message ||
-    "Signup failed"
-  );
-
+      setError(err.response?.data?.message || "We could not create your account. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="page flex items-center justify-center">
-      <div className="glass-panel w-full max-w-2xl rounded-lg p-6 sm:p-8 lg:p-10">
-        <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold tracking-[-0.02em] text-slate-950 dark:text-white">
-            Create your account
-          </h1>
-          <p className="muted mt-2">Create an account to access emergency tools and save your medical details.</p>
+    <main className="page auth-page">
+      <section className="auth-card auth-card--signup">
+        <div className="auth-content">
+          <div className="auth-heading">
+            <p className="eyebrow"><span className="eyebrow-mark" />Get started</p>
+            <h1>Create your account</h1>
+            <p className="muted">Save your medical details and use LifeLink’s emergency tools.</p>
+          </div>
+
+          {error && <div role="alert" className="error-banner mb-6">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="grid gap-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="label" htmlFor="signup-name">Full name</label>
+              <input id="signup-name" autoComplete="name" required maxLength={100} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="field" />
+            </div>
+            <div>
+              <label className="label" htmlFor="signup-email">Email address</label>
+              <input id="signup-email" type="email" autoComplete="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="field" />
+            </div>
+            <div>
+              <label className="label" htmlFor="signup-phone">Phone number <span className="optional-label">(optional)</span></label>
+              <input id="signup-phone" type="tel" autoComplete="tel" maxLength={40} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} className="field" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label" htmlFor="signup-password">Password</label>
+              <input id="signup-password" type="password" autoComplete="new-password" minLength={8} maxLength={128} required value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} className="field" />
+              <p className="field-hint">Use at least 8 characters.</p>
+            </div>
+            <button type="submit" disabled={loading} className="btn-primary sm:col-span-2">
+              {loading ? "Creating account…" : "Create account"}
+            </button>
+          </form>
+
+          <p className="auth-footer">Already have an account? <Link to="/login">Sign in</Link></p>
         </div>
-
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="grid gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="label">Full name</label>
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="field"
-            />
-          </div>
-          <div>
-            <label className="label">Email</label>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="field"
-            />
-          </div>
-          <div>
-            <label className="label">Phone</label>
-            <input
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="field"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="label">Password</label>
-            <input
-              type="password"
-              required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="field"
-            />
-          </div>
-
-          <button type="submit" disabled={loading} className="btn-primary sm:col-span-2">
-            {loading ? "Creating account..." : "Create account"}
-          </button>
-        </form>
-
-        <p className="muted mt-6 text-center text-sm">
-          Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-red-600 hover:underline dark:text-red-300">
-            Log in
-          </Link>
-        </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

@@ -14,17 +14,28 @@ const RADIUS_STEPS = [5000, 15000, 40000];
 async function queryOverpass(amenity, latitude, longitude, radius) {
   const query = `
     [out:json][timeout:20];
-    node["amenity"="${amenity}"](around:${radius},${latitude},${longitude});
-    out body;
+    nwr["amenity"="${amenity}"](around:${radius},${latitude},${longitude});
+    out center;
   `;
 
   let lastError = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
-      const res = await fetch(endpoint, { method: "POST", body: query });
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: query,
+        signal: AbortSignal.timeout(25000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      return data.elements || [];
+      const seen = new Set();
+      return (data.elements || []).filter((place) => {
+        const key = `${place.type || "node"}/${place.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     } catch (err) {
       lastError = err;
       // try next mirror
@@ -41,13 +52,22 @@ export default function NearbyHelp() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("hospital");
   const [searchedRadiusKm, setSearchedRadiusKm] = useState(null);
+  const [searched, setSearched] = useState(false);
 
   const findNearby = () => {
     setLoading(true);
     setError("");
     setPlaces([]);
     setSearchedRadiusKm(null);
+    setSearched(false);
     setLoadingNote("Getting your location...");
+
+    if (!navigator.geolocation) {
+      setError("Location access is not available in this browser.");
+      setLoading(false);
+      setLoadingNote("");
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -68,6 +88,7 @@ export default function NearbyHelp() {
             if (found.length > 0) break;
           }
           setPlaces(found);
+          setSearched(true);
         } catch (err) {
           setError(
             "Could not reach the map data service right now. Please check your connection and try again."
@@ -81,27 +102,34 @@ export default function NearbyHelp() {
         setError("Location access is needed to find nearby help.");
         setLoading(false);
         setLoadingNote("");
-      }
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   };
 
   return (
     <div className="page">
       <div className="page-inner">
-        <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div>
+        <div className="nearby-header">
+          <div className="page-heading mb-0">
             <h1 className="section-title">Find help nearby</h1>
             <p className="muted mt-2">Locate hospitals and police stations around your current position.</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="nearby-controls">
             {[
               ["hospital", "Hospitals"],
               ["police", "Police"],
             ].map(([value, label]) => (
               <button
                 key={value}
-                onClick={() => setFilter(value)}
+                onClick={() => {
+                  setFilter(value);
+                  setPlaces([]);
+                  setSearchedRadiusKm(null);
+                  setSearched(false);
+                }}
+                aria-pressed={filter === value}
                 className={filter === value ? "btn-primary" : "btn-ghost"}
               >
                 {label}
@@ -114,31 +142,34 @@ export default function NearbyHelp() {
         </div>
 
         {loading && loadingNote && (
-          <p className="muted mb-4 text-sm font-mono">{loadingNote}</p>
+          <p className="muted mb-4 text-sm" role="status">{loadingNote}</p>
         )}
 
         {error && (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+          <p role="alert" className="error-banner mb-4">
             {error}
           </p>
         )}
 
-        <div className="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="map-frame h-[560px] bg-white dark:bg-slate-900">
+        <div className="nearby-grid">
+          <div className="map-frame nearby-map">
             {center ? (
               <MapContainer center={center} zoom={12} style={{ height: "100%", width: "100%" }}>
                 <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <Marker position={center}>
                   <Popup>You are here</Popup>
                 </Marker>
-                {places.map((p) => (
-                  <Marker key={p.id} position={[p.lat, p.lon]}>
+                {places.map((p) => {
+                  const latitude = p.lat ?? p.center?.lat;
+                  const longitude = p.lon ?? p.center?.lon;
+                  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+                  return <Marker key={`${p.type || "node"}/${p.id}`} position={[latitude, longitude]}>
                     <Popup>{p.tags?.name || (filter === "hospital" ? "Hospital" : "Police station")}</Popup>
-                  </Marker>
-                ))}
+                  </Marker>;
+                })}
               </MapContainer>
             ) : (
-              <div className="grid h-full place-items-center p-8 text-center">
+              <div className="empty-state h-full">
                 <div>
                   <h2 className="font-display text-xl font-bold text-slate-950 dark:text-white">Ready to scan your area</h2>
                   <p className="muted mt-2 max-w-sm">Choose a category, then search near your current location.</p>
@@ -147,10 +178,10 @@ export default function NearbyHelp() {
             )}
           </div>
 
-          <aside className="surface max-h-[560px] overflow-y-auto p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display font-bold text-slate-950 dark:text-white">Results</h2>
-              <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-mono text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+          <aside className="surface nearby-results">
+            <div className="nearby-results-head">
+              <h2>Nearby services</h2>
+              <span className="result-count">
                 {places.length}
               </span>
             </div>
@@ -161,19 +192,24 @@ export default function NearbyHelp() {
                   Found within ~{searchedRadiusKm} km
                 </p>
                 <ul className="space-y-3">
-                  {places.map((p) => (
-                    <li key={p.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
-                      <p className="font-display font-bold text-slate-950 dark:text-white">
+                  {places.map((p) => {
+                    const latitude = p.lat ?? p.center?.lat;
+                    const longitude = p.lon ?? p.center?.lon;
+                    return <li key={`${p.type || "node"}/${p.id}`} className="place-card">
+                      <h3>
                         {p.tags?.name || (filter === "hospital" ? "Unnamed hospital" : "Unnamed police station")}
-                      </p>
-                      <p className="muted mt-1 text-sm">
+                      </h3>
+                      <p>
                         {p.tags?.["addr:street"] || "Address not listed"}
                       </p>
-                    </li>
-                  ))}
+                      {Number.isFinite(latitude) && Number.isFinite(longitude) && (
+                        <a href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`} target="_blank" rel="noreferrer">Directions</a>
+                      )}
+                    </li>;
+                  })}
                 </ul>
               </>
-            ) : !loading && !error && center ? (
+            ) : searched && !loading && !error && center ? (
               <div className="muted text-sm">
                 <p className="mb-2">
                   No {filter === "hospital" ? "hospitals" : "police stations"} found
@@ -188,7 +224,7 @@ export default function NearbyHelp() {
                 </p>
               </div>
             ) : (
-              <p className="muted text-sm">Results will appear here.</p>
+              <p className="empty-state">{center ? "Search this category to update the results." : "Search near you to see nearby services."}</p>
             )}
           </aside>
         </div>

@@ -10,8 +10,8 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
     setLoading(true);
     try {
@@ -19,79 +19,64 @@ export default function Login() {
       login(data);
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(err.response?.data?.message || "We could not sign you in. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="page flex items-center justify-center">
-      <div className="glass-panel grid w-full max-w-5xl overflow-hidden rounded-lg lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="hidden bg-slate-950 p-8 text-white lg:flex lg:flex-col lg:justify-between">
+    <main className="page auth-page">
+      <div className="auth-card">
+        <aside className="auth-side">
           <div>
-            <div className="grid h-12 w-12 place-items-center rounded-lg bg-red-600 font-display text-xl font-bold">+</div>
-            <h1 className="mt-8 font-display text-4xl font-bold tracking-[-0.02em]">Welcome back.</h1>
-            <p className="mt-4 max-w-sm text-slate-300">
-              Access your emergency tools, update your medical details, or review first-aid guidance.
-            </p>
+            <div className="auth-mark" aria-hidden="true">+</div>
+            <h1>Welcome back.</h1>
+            <p>Access your emergency tools, update your medical details, or review first-aid guidance.</p>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {["SOS", "NEARBY HELP", "FIRST AID"].map((item) => (
-              <div key={item} className="rounded-lg border border-white/10 bg-white/10 p-4 text-center font-mono text-sm font-bold tracking-[0.08em]">
-                {item}
-              </div>
-            ))}
+          <div className="auth-features" aria-label="LifeLink tools">
+            <span>SOS</span><span>NEARBY HELP</span><span>FIRST AID</span>
           </div>
-        </div>
+        </aside>
 
-        <div className="p-6 sm:p-8 lg:p-10">
-          <h2 className="font-display text-3xl font-bold tracking-[-0.02em] text-slate-950 dark:text-white">
-            Log in
-          </h2>
-          <p className="muted mt-2 text-sm">Access your LifeLink emergency tools.</p>
-
-          {error && (
-            <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-              {error}
-            </div>
-          )}
+        <section className="auth-content">
+          <h2>Sign in</h2>
+          <p>Access your LifeLink account and emergency tools.</p>
+          {error && <div role="alert" className="error-banner mt-6">{error}</div>}
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-5">
             <div>
-              <label className="label">Email</label>
+              <label className="label" htmlFor="login-email">Email address</label>
               <input
+                id="login-email"
                 type="email"
+                autoComplete="email"
                 required
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={(event) => setForm({ ...form, email: event.target.value })}
                 className="field"
               />
             </div>
             <div>
-              <label className="label">Password</label>
+              <label className="label" htmlFor="login-password">Password</label>
               <input
+                id="login-password"
                 type="password"
+                autoComplete="current-password"
                 required
                 value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
                 className="field"
               />
             </div>
-
             <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? "Logging in..." : "Log in"}
+              {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
-          <p className="muted mt-6 text-center text-sm">
-            Do not have an account?{" "}
-            <Link to="/signup" className="font-semibold text-red-600 hover:underline dark:text-red-300">
-              Sign up
-            </Link>
-          </p>
-        </div>
+          <p className="auth-footer">New to LifeLink? <Link to="/signup">Create an account</Link></p>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import api from "../api/axios";
@@ -14,6 +14,11 @@ export default function SOS() {
   const [location, setLocation] = useState(null);
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    api.get("/sos/history").then(({ data }) => setHistory(data)).catch(() => {});
+  }, []);
 
   const triggerSOS = () => {
     setStatus("locating");
@@ -21,92 +26,102 @@ export default function SOS() {
 
     if (!navigator.geolocation) {
       setStatus("error");
-      setErrorMsg("Geolocation is not supported on this device or browser.");
+      setErrorMsg("Location sharing is not supported by this browser.");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const coords = {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        };
+        const coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
         setLocation(coords);
-
         try {
-          await api.post("/sos", coords);
-          setStatus("sent");
-        } catch (err) {
-          setStatus("sent");
+          const { data } = await api.post("/sos", coords);
+          setHistory((current) => [data, ...current].slice(0, 50));
+          setStatus("saved");
+        } catch {
+          setStatus("error");
+          setErrorMsg("We could not save your alert. Call your local emergency number directly if you need urgent help.");
         }
       },
       () => {
         setStatus("error");
-        setErrorMsg("Could not get your location. Please allow location access.");
+        setErrorMsg("Location access was denied or unavailable. Call your local emergency number directly if you need urgent help.");
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
   return (
     <div className="page">
-      <div className="page-inner grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-        <section className="glass-panel rounded-lg p-6 text-center sm:p-8">
-          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-lg bg-red-50 font-mono text-sm font-bold tracking-[0.08em] text-red-700 dark:bg-red-500/10 dark:text-red-200">
-            SOS
-          </div>
+      <div className="page-inner sos-grid">
+        <section className="glass-panel sos-panel">
+          <div className="sos-mark">SOS</div>
           <h1 className="section-title">Emergency SOS</h1>
-          <p className="muted mx-auto mt-3 max-w-md">
-            Share your live location immediately and keep it visible on the map.
-          </p>
+          <p className="sos-copy">Save your current coordinates to your account. This does not contact emergency services or your emergency contact.</p>
 
           <button
             onClick={triggerSOS}
             disabled={status === "locating"}
-            className="pulse-ring mx-auto mt-10 grid h-48 w-48 place-items-center rounded-full bg-red-600 font-mono text-3xl font-bold tracking-[0.08em] text-white shadow-[0_30px_80px_rgba(220,38,38,0.38)] transition hover:bg-red-700 active:scale-95 disabled:opacity-70"
+            aria-label="Save an SOS alert with your current location"
+            className="sos-button pulse-ring"
           >
-            {status === "locating" ? "..." : "SOS"}
+            {status === "locating" ? "…" : "SOS"}
           </button>
 
-          <div className="mt-8 min-h-8">
-            {status === "sent" && (
-              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-                Location sent. Stay where you are if it is safe.
+          <div className="mt-8 min-h-8" aria-live="polite">
+            {status === "saved" && (
+              <p className="notice">
+                Location saved to your alert history. No one has been notified; call your local emergency number if you need urgent help.
               </p>
             )}
             {status === "error" && (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+              <p role="alert" className="error-banner">
                 {errorMsg}
               </p>
             )}
           </div>
         </section>
 
-        <section className="surface overflow-hidden">
+        <section className="surface sos-map map-frame overflow-hidden">
           {location ? (
-            <div className="h-[520px]">
-              <MapContainer
-                center={[location.latitude, location.longitude]}
-                zoom={15}
-                style={{ height: "100%", width: "100%" }}
-              >
+            <div className="sos-leaflet">
+              <MapContainer center={[location.latitude, location.longitude]} zoom={15} style={{ height: "100%", width: "100%" }}>
                 <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <Marker position={[location.latitude, location.longitude]}>
-                  <Popup>Your current location</Popup>
-                </Marker>
+                <Marker position={[location.latitude, location.longitude]}><Popup>Your current location</Popup></Marker>
               </MapContainer>
             </div>
           ) : (
-            <div className="grid min-h-[520px] place-items-center p-8 text-center">
+            <div className="sos-empty">
               <div>
                 <div className="mx-auto mb-5 h-24 w-24 rounded-full border border-dashed border-slate-300 dark:border-white/20" />
-                <h2 className="font-display text-xl font-bold text-slate-950 dark:text-white">Map appears after location access</h2>
-                <p className="muted mt-2 max-w-sm">Your precise coordinates stay visible here once SOS is triggered.</p>
+                <h2 className="font-display text-xl font-bold text-slate-950 dark:text-white">Your location map</h2>
+                <p className="muted mt-2 max-w-sm">Your coordinates appear here after you request an alert.</p>
               </div>
             </div>
           )}
         </section>
       </div>
+
+      <section className="page-inner mt-8">
+        <div className="surface sos-history">
+          <div className="sos-history-head">
+            <h2 className="section-title">Recent alerts</h2>
+            <span className="muted text-sm">Saved to this account</span>
+          </div>
+          {history.length ? (
+            <ul className="sos-history-list">
+              {history.map((alert) => (
+                <li key={alert.id || alert._id} className="sos-history-row">
+                  <strong>{new Date(alert.createdAt).toLocaleString()}</strong>
+                  <span className="muted">{Number(alert.latitude).toFixed(5)}, {Number(alert.longitude).toFixed(5)} · {alert.status}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted text-sm">No alerts have been saved yet.</p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

@@ -7,11 +7,20 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("lifelink_user");
-    if (stored) {
-      setUser(JSON.parse(stored));
+    try {
+      const stored = JSON.parse(localStorage.getItem("lifelink_user") || "null");
+      if (stored?.token && stored?._id) setUser(stored);
+      else localStorage.removeItem("lifelink_user");
+    } catch {
+      localStorage.removeItem("lifelink_user");
     }
     setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => setUser(null);
+    window.addEventListener("lifelink:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("lifelink:unauthorized", handleUnauthorized);
   }, []);
 
   const login = (userData) => {

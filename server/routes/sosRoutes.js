@@ -9,7 +9,9 @@ router.post("/", protect, async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
 
-    if (latitude == null || longitude == null) {
+    if (typeof latitude !== "number" || typeof longitude !== "number" ||
+        !Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+        latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       return res.status(400).json({ message: "Location is required" });
     }
 
@@ -19,20 +21,32 @@ router.post("/", protect, async (req, res) => {
       longitude,
     });
 
-    // In a full version: trigger SMS/email to emergency contacts here (Twilio/Nodemailer)
-    res.status(201).json(sos);
+    return res.status(201).json({
+      id: sos._id,
+      latitude: sos.latitude,
+      longitude: sos.longitude,
+      status: sos.status,
+      createdAt: sos.createdAt,
+      notificationSent: false,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("SOS creation failed:", err);
+    return res.status(500).json({ message: "We could not save this alert. Please try again." });
   }
 });
 
 // GET /api/sos/history (protected) - get this user's past alerts
 router.get("/history", protect, async (req, res) => {
   try {
-    const history = await SOS.find({ user: req.userId }).sort({ createdAt: -1 });
-    res.json(history);
+    const history = await SOS.find({ user: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .select("latitude longitude status createdAt")
+      .lean();
+    return res.json(history);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("SOS history lookup failed:", err);
+    return res.status(500).json({ message: "We could not load your alert history." });
   }
 });
 
