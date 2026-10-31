@@ -44,7 +44,6 @@ PORT=5000
 MONGO_URI=mongodb+srv://<user>:<password>@<cluster>/<database>
 JWT_SECRET=<long-random-secret>
 GEMINI_API_KEY=<your-gemini-api-key>
-GEMINI_MODEL=gemini-3.8-flash
 CLIENT_ORIGIN=http://localhost:5173
 ```
 
@@ -84,7 +83,6 @@ Deploy `client/` as a Vercel project and deploy `server/` as a Node.js service. 
 - `MONGO_URI`
 - `JWT_SECRET`
 - `GEMINI_API_KEY`
-- `GEMINI_MODEL` (set to `gemini-3.8-flash`, or omit it to use the backend default)
 - `CLIENT_ORIGIN`, set to the exact frontend origin (for example `https://life-link-ai-three.vercel.app`)
 
 Set `VITE_API_URL` on Vercel to the deployed API base URL ending in `/api`, then redeploy the frontend. Do not place database credentials or Gemini keys in `VITE_*` variables.

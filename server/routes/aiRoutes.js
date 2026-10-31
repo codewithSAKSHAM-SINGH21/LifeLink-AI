@@ -5,10 +5,11 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 const SYSTEM_PROMPT = `You provide calm, concise first-aid guidance. For emergencies such as chest pain, severe bleeding, unconsciousness, difficulty breathing, stroke symptoms, severe burns or poisoning, begin by telling the person to call their local emergency number. Then give safe, numbered steps to take while help is on the way. Never diagnose, recommend prescription medicines, or imply that chat replaces emergency care. Use plain language and keep replies under 150 words.`;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const GEMINI_MODEL = "gemini-3.8-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-3.5-flash-lite";
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  limit: 10,
+  limit: 20,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: { message: "Please wait a moment before asking for more guidance." },
@@ -35,27 +36,55 @@ const isModelAvailabilityError = (err) => {
   );
 };
 
+const isTemporaryProviderError = (err) => {
+  const { status, message } = getProviderErrorDetails(err);
+  return (
+    status === 408 ||
+    status === 429 ||
+    status >= 500 ||
+    err?.name === "AbortError" ||
+    /fetch failed|timed out|network|econnreset|econnrefused|enotfound|socket hang up/.test(message)
+  );
+};
+
+const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const requestModelReply = async (client, model, message) => {
+  const result = await client.models.generateContent({
+    model,
+    contents: message,
+    config: {
+      systemInstruction: SYSTEM_PROMPT,
+      maxOutputTokens: 500,
+    },
+  });
+  const reply = result.text?.trim();
+  if (!reply) throw new Error("AI_EMPTY_RESPONSE");
+  return reply;
+};
+
 const generateFirstAidReply = async (client, message) => {
-  const models = [...new Set([GEMINI_MODEL, "gemini-3.5-flash-lite"])];
+  const models = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL];
   let lastError;
 
-  for (const [index, model] of models.entries()) {
-    try {
-      const result = await client.models.generateContent({
-        model,
-        contents: message,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          maxOutputTokens: 500,
-        },
-      });
-      const reply = result.text?.trim();
-      if (!reply) throw new Error("AI_EMPTY_RESPONSE");
-      return reply;
-    } catch (err) {
-      lastError = err;
-      if (index === models.length - 1 || !isModelAvailabilityError(err)) throw err;
-      console.warn(`Configured Gemini model is unavailable; retrying with ${models[index + 1]}.`);
+  for (const [modelIndex, model] of models.entries()) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await requestModelReply(client, model, message);
+      } catch (err) {
+        lastError = err;
+        const canFallback = modelIndex < models.length - 1 &&
+          (isModelAvailabilityError(err) || isTemporaryProviderError(err));
+        if (canFallback) {
+          console.warn(`Gemini ${model} failed; trying ${models[modelIndex + 1]}.`);
+          break;
+        }
+
+        const canRetry = attempt === 0 && isTemporaryProviderError(err) && getProviderErrorDetails(err).status !== 429;
+        if (!canRetry) throw err;
+        await pause(350 + Math.floor(Math.random() * 250));
+        console.warn(`Temporary Gemini ${model} error; retrying once.`);
+      }
     }
   }
 
@@ -83,8 +112,12 @@ router.post("/chat", protect, aiLimiter, async (req, res) => {
       return res.status(503).json({ message: "First-aid AI is not configured. Please contact the site administrator. For an emergency, call your local emergency number." });
     }
     if (status === 429 || providerMessage.includes("quota") || providerMessage.includes("resource exhausted")) {
-      res.setHeader("Retry-After", "60");
-      return res.status(429).json({ message: "The guidance service is busy. Please try again shortly." });
+      res.setHeader("Retry-After", "10");
+      return res.status(429).json({ message: "Gemini Flash is at its current request or usage limit. Please try again shortly; the service owner may need to review the Gemini API quota." });
+    }
+    if (status === 503 || status === 502 || status === 504 || status === 408) {
+      res.setHeader("Retry-After", "3");
+      return res.status(503).json({ message: "Gemini Flash is temporarily overloaded. Please try again in a few seconds." });
     }
     if (status === 401 || (status === 403 && !isModelAvailabilityError(err)) || providerMessage.includes("api key")) {
       return res.status(503).json({ message: "First-aid AI could not authenticate with its provider. Please contact the site administrator. For an emergency, call your local emergency number." });
