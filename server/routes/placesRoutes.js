@@ -5,6 +5,7 @@ const router = express.Router();
 const endpoints = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ];
 const categories = {
   hospital: '["amenity"~"^(hospital|clinic|doctors)$"]',
@@ -12,7 +13,7 @@ const categories = {
 };
 const radii = [5000, 15000, 40000];
 const overpassTimeoutSeconds = 15;
-const requestTimeoutMs = 25000;
+const requestTimeoutMs = 18000;
 const lookupLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 20,
