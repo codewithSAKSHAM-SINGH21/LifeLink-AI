@@ -58,7 +58,7 @@ test("allows the map provider longer than the Overpass query timeout", async () 
     const result = response();
     await handleNearby(request({ category: "hospital", latitude: "10", longitude: "20" }), result);
     assert.equal(result.statusCode, 200);
-    assert.equal(timeoutValues[0], 25000);
+    assert.equal(timeoutValues[0], 18000);
   } finally {
     AbortSignal.timeout = originalTimeout;
   }
@@ -68,14 +68,14 @@ test("fails over to another map provider and reports outages clearly", async () 
   let calls = 0;
   globalThis.fetch = async () => {
     calls += 1;
-    if (calls === 1) throw new Error("provider timeout");
+    if (calls < 3) throw new Error("provider timeout");
     return Response.json({ elements: [{ type: "node", id: 12, lat: 10, lon: 20, tags: { name: "Central Police Station" } }] });
   };
   const result = response();
   await handleNearby(request({ category: "police", latitude: "10", longitude: "20" }), result);
   assert.equal(result.statusCode, 200);
   assert.equal(result.body.places[0].tags.name, "Central Police Station");
-  assert.equal(calls, 2);
+  assert.equal(calls, 3);
 
   calls = 0;
   globalThis.fetch = async () => { calls += 1; throw new Error("provider unavailable"); };
@@ -83,5 +83,5 @@ test("fails over to another map provider and reports outages clearly", async () 
   await handleNearby(request({ category: "police", latitude: "10", longitude: "20" }), outage);
   assert.equal(outage.statusCode, 502);
   assert.match(outage.body.message, /temporarily unavailable/);
-  assert.equal(calls, 2);
+  assert.equal(calls, 3);
 });
