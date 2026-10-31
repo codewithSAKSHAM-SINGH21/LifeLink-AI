@@ -33,12 +33,11 @@ export default function Login() {
             <div className="grid h-12 w-12 place-items-center rounded-lg bg-red-600 font-display text-xl font-bold">+</div>
             <h1 className="mt-8 font-display text-4xl font-bold tracking-[-0.02em]">Welcome back.</h1>
             <p className="mt-4 max-w-sm text-slate-300">
-              Open your emergency dashboard, update your profile, or get fast
-              first-aid guidance when every second matters.
+              Access your emergency tools, update your medical details, or review first-aid guidance.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {["SOS", "MAP", "AI"].map((item) => (
+            {["SOS", "NEARBY HELP", "FIRST AID"].map((item) => (
               <div key={item} className="rounded-lg border border-white/10 bg-white/10 p-4 text-center font-mono text-sm font-bold tracking-[0.08em]">
                 {item}
               </div>

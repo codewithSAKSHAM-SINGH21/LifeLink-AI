@@ -66,7 +66,7 @@ export default function Assistant() {
       <div className="page-inner grid gap-5 lg:grid-cols-[0.72fr_1.28fr]">
         <aside className="glass-panel rounded-lg p-6">
           <div className="mb-5 grid h-14 w-14 place-items-center rounded-lg bg-red-50 font-mono text-sm font-bold tracking-[0.08em] text-red-700 dark:bg-red-500/10 dark:text-red-200">
-            AI
+            01
           </div>
           <h1 className="section-title">First-aid assistant</h1>
           <p className="muted mt-3">
